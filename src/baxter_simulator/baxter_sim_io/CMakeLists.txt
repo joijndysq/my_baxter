@@ -3,6 +3,9 @@
 ##############################################################################
 
 cmake_minimum_required(VERSION 2.8.0)
+if(POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif()
 project(baxter_sim_io)
 
 ##############################################################################
@@ -13,7 +16,8 @@ SET(CMAKE_CXX_FLAGS "-fPIC")
 # qt_build provides the qt cmake glue, roscpp the comms for a default talker
 #find_package(catkin REQUIRED COMPONENTS qt_build roscpp baxter_core_msgs)
 
-set(CMAKE_AUTOMOC ON)
+# Qt MOC is handled explicitly by QT5_WRAP_CPP below; keep global AUTOMOC disabled
+set(CMAKE_AUTOMOC OFF)
 find_package(catkin REQUIRED COMPONENTS roscpp baxter_core_msgs)
 find_package(Qt5Widgets REQUIRED)
 

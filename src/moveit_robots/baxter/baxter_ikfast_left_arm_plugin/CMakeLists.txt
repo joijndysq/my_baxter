@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
+if(POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif()
 project(baxter_ikfast_left_arm_plugin)
 
 add_compile_options(-std=c++11)
@@ -30,6 +33,7 @@ set(IKFAST_LIBRARY_NAME baxter_left_arm_moveit_ikfast_plugin)
 find_package(LAPACK REQUIRED)
 
 add_library(${IKFAST_LIBRARY_NAME} src/baxter_left_arm_ikfast_moveit_plugin.cpp)
+target_compile_options(${IKFAST_LIBRARY_NAME} PRIVATE -Wno-deprecated-declarations)
 target_link_libraries(${IKFAST_LIBRARY_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 
 install(TARGETS ${IKFAST_LIBRARY_NAME} LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})

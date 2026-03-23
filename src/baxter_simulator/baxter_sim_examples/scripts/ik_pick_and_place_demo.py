@@ -118,6 +118,37 @@ class PickAndPlace(object):
             return False
         return limb_joints
 
+    def ik_request_with_retry(self, pose):
+        z_lift_steps = [0.0, 0.03, 0.06, 0.09, 0.12]
+
+        for dz in z_lift_steps:
+            candidate_pose = copy.deepcopy(pose)
+            candidate_pose.position.z += dz
+            joint_angles = self.ik_request(candidate_pose)
+            if joint_angles:
+                if dz > 0.0:
+                    rospy.logwarn("IK recovered by lifting z +%.3fm", dz)
+                return joint_angles
+
+        endpoint_orientation = self._limb.endpoint_pose()['orientation']
+        fallback_orientation = Quaternion(
+            x=endpoint_orientation.x,
+            y=endpoint_orientation.y,
+            z=endpoint_orientation.z,
+            w=endpoint_orientation.w,
+        )
+
+        for dz in z_lift_steps:
+            candidate_pose = copy.deepcopy(pose)
+            candidate_pose.position.z += dz
+            candidate_pose.orientation = fallback_orientation
+            joint_angles = self.ik_request(candidate_pose)
+            if joint_angles:
+                rospy.logwarn("IK recovered with fallback orientation (z +%.3fm)", dz)
+                return joint_angles
+
+        return False
+
     def _guarded_move_to_joint_position(self, joint_angles):
         if joint_angles:
             self._limb.move_to_joint_positions(joint_angles)
@@ -136,8 +167,9 @@ class PickAndPlace(object):
         approach = copy.deepcopy(pose)
         # approach with a pose the hover-distance above the requested pose
         approach.position.z = approach.position.z + self._hover_distance
-        joint_angles = self.ik_request(approach)
+        joint_angles = self.ik_request_with_retry(approach)
         self._guarded_move_to_joint_position(joint_angles)
+        return bool(joint_angles)
 
     def _retract(self):
         # retrieve current pose from endpoint
@@ -150,36 +182,50 @@ class PickAndPlace(object):
         ik_pose.orientation.y = current_pose['orientation'].y
         ik_pose.orientation.z = current_pose['orientation'].z
         ik_pose.orientation.w = current_pose['orientation'].w
-        joint_angles = self.ik_request(ik_pose)
+        joint_angles = self.ik_request_with_retry(ik_pose)
         # servo up from current pose
         self._guarded_move_to_joint_position(joint_angles)
+        return bool(joint_angles)
 
     def _servo_to_pose(self, pose):
         # servo down to release
-        joint_angles = self.ik_request(pose)
+        joint_angles = self.ik_request_with_retry(pose)
         self._guarded_move_to_joint_position(joint_angles)
+        return bool(joint_angles)
 
     def pick(self, pose):
         # open the gripper
         self.gripper_open()
         # servo above pose
-        self._approach(pose)
+        if not self._approach(pose):
+            rospy.logerr("Pick aborted: failed to approach pose")
+            return False
         # servo to pose
-        self._servo_to_pose(pose)
+        if not self._servo_to_pose(pose):
+            rospy.logerr("Pick aborted: failed to reach pick pose")
+            return False
         # close gripper
         self.gripper_close()
         # retract to clear object
-        self._retract()
+        if not self._retract():
+            rospy.logerr("Pick warning: failed to retract")
+        return True
 
     def place(self, pose):
         # servo above pose
-        self._approach(pose)
+        if not self._approach(pose):
+            rospy.logerr("Place aborted: failed to approach pose")
+            return False
         # servo to pose
-        self._servo_to_pose(pose)
+        if not self._servo_to_pose(pose):
+            rospy.logerr("Place aborted: failed to reach place pose")
+            return False
         # open the gripper
         self.gripper_open()
         # retract to clear object
-        self._retract()
+        if not self._retract():
+            rospy.logerr("Place warning: failed to retract")
+        return True
 
 def load_gazebo_models(table_pose=Pose(position=Point(x=1.0, y=0.0, z=0.0)),
                        table_reference_frame="world",
@@ -250,7 +296,7 @@ def main():
     rospy.wait_for_message("/robot/sim/started", Empty)
 
     limb = 'left'
-    hover_distance = 0.15 # meters
+    hover_distance = 0.10 # meters
     # Starting Joint angles for left arm
     starting_joint_angles = {'left_w0': 0.6699952259595108,
                              'left_w1': 1.030009435085784,
@@ -271,22 +317,26 @@ def main():
     # You may wish to replace these poses with estimates
     # from a perception node.
     block_poses.append(Pose(
-        position=Point(x=0.7, y=0.15, z=-0.129),
+        position=Point(x=0.62, y=0.20, z=-0.03),
         orientation=overhead_orientation))
     # Feel free to add additional desired poses for the object.
     # Each additional pose will get its own pick and place.
     block_poses.append(Pose(
-        position=Point(x=0.75, y=0.0, z=-0.129),
+        position=Point(x=0.65, y=0.00, z=-0.03),
         orientation=overhead_orientation))
     # Move to the desired starting angles
     pnp.move_to_start(starting_joint_angles)
     idx = 0
     while not rospy.is_shutdown():
         print("\nPicking...")
-        pnp.pick(block_poses[idx])
+        if not pnp.pick(block_poses[idx]):
+            rospy.logwarn("Skipping cycle due to pick IK failure")
+            idx = (idx+1) % len(block_poses)
+            continue
         print("\nPlacing...")
         idx = (idx+1) % len(block_poses)
-        pnp.place(block_poses[idx])
+        if not pnp.place(block_poses[idx]):
+            rospy.logwarn("Skipping cycle due to place IK failure")
     return 0
 
 if __name__ == '__main__':

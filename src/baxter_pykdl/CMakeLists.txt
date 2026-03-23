@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
+if(POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif()
 project(baxter_pykdl)
 
 find_package(catkin
@@ -19,13 +22,9 @@ catkin_package(
   rospy
   geometry_msgs
   sensor_msgs
-  urdfdom
   tf
   baxter_interface
   baxter_core_msgs
-  DEPENDS
-  python_orocos_kdl
-  urdfdom
 )
 
 install(

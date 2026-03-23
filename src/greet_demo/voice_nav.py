@@ -65,7 +65,7 @@ class VoiceNav:
         self.paused = False
 
         # Create the sound client object
-        self.voice = rospy.get_param("~voice", "voice_don_diphone")
+        self.voice = rospy.get_param("~voice", "voice_kal_diphone")
         self.soundhandle = SoundClient()
 
         # Initialize the Twist message we will publish.
@@ -93,12 +93,13 @@ class VoiceNav:
             r.sleep()                       
             
     def get_command(self, data):
-        # Attempt to match the recognized word or phrase to the 
+        # Attempt to match the recognized word or phrase to the
         # keywords_to_command dictionary and return the appropriate
         # command
-        for (command, keywords) in self.keywords_to_command.iteritems():
+        text = data.lower()
+        for (command, keywords) in self.keywords_to_command.items():
             for word in keywords:
-                if data.find(word) > -1:
+                if text.find(word) > -1:
                     return command
         
     def speech_callback(self, msg):

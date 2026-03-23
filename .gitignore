@@ -5,3 +5,7 @@ logs/
 .vscode/
 *.pyc
 __pycache__/
+
+# Nested repositories (avoid accidental gitlink staging)
+src/baxter-pnp/
+src/rbx1/
