@@ -22,13 +22,13 @@ LEFT_INITIAL_JOINT_ANGLES = {
 
 # 右臂初始/归零位置（自然下垂）
 RIGHT_INITIAL_JOINT_ANGLES = {
-    'right_s0': 0.0,   # 肩部旋转关节
-    'right_s1': 0.0,   # 肩部俯仰关节
-    'right_e0': 0.0,   # 肘部旋转关节
-    'right_e1': 0.0,   # 肘部俯仰关节
-    'right_w0': 0.0,   # 腕部旋转关节
-    'right_w1': 0.0,   # 腕部俯仰关节
-    'right_w2': 0.0    # 腕部扭转关节
+    'right_s0': -0.133,
+    'right_s1': 0.388,
+    'right_e0': 0.338,
+    'right_e1': 0.949,
+    'right_w0': -0.422,
+    'right_w1': -0.026,
+    'right_w2': -0.276
 }
 
 # 右臂打招呼动作位置
@@ -60,6 +60,39 @@ RIGHT_RAISE_JOINT_ANGLES = {
     'right_w0': 0.206,    # 腕部保持中立
     'right_w1': 0.055,    # 腕部伸展
     'right_w2': -0.161     # 腕部旋转初始
+}
+
+# 右臂模仿拍球动作 - 准备姿态（手在球上方）
+RIGHT_DRIBBLE_PREP_JOINT_ANGLES = {
+    'right_s0': -0.240,
+    'right_s1': -0.200,
+    'right_e0': 0.720,
+    'right_e1': 1.300,
+    'right_w0': -0.180,
+    'right_w1': -0.700,
+    'right_w2': -0.060
+}
+
+# 右臂模仿拍球动作 - 上抬位
+RIGHT_DRIBBLE_UP_JOINT_ANGLES = {
+    'right_s0': -0.200,
+    'right_s1': -0.080,
+    'right_e0': 0.640,
+    'right_e1': 1.120,
+    'right_w0': -0.100,
+    'right_w1': -0.520,
+    'right_w2': 0.000
+}
+
+# 右臂模仿拍球动作 - 下压位
+RIGHT_DRIBBLE_DOWN_JOINT_ANGLES = {
+    'right_s0': -0.280,
+    'right_s1': -0.320,
+    'right_e0': 0.820,
+    'right_e1': 1.520,
+    'right_w0': -0.260,
+    'right_w1': -0.900,
+    'right_w2': -0.120
 }
 
 # 运动控制参数
@@ -209,7 +242,7 @@ def perform_right_arm_sequence():
         
         # 阶段2: 显示第一张图片
         rospy.loginfo("显示第一张图片")
-        send_image("/root/baxter_ws/src/baxter_examples/scripts/pic/hello.png")
+        send_image("/root/baxter_ws/src/greet_demo/pic/hello.jpg")
 
         # 阶段3: 执行三次打招呼动作循环
         rospy.loginfo("阶段3: 执行三次打招呼动作循环")
@@ -226,16 +259,24 @@ def perform_right_arm_sequence():
 
         # 阶段4: 显示第二张图片
         rospy.loginfo("显示第二张图片")
-        send_image("/root/baxter_ws/src/baxter_examples/scripts/pic/xihai.png")
+        send_image("/root/baxter_ws/src/greet_demo/pic/basketball.jpg")
         
-        # 阶段5: 右臂平举上抬
-        rospy.loginfo("阶段5: 右臂平举上抬")
-        move_to_joint_positions_smooth(right_limb, RIGHT_RAISE_JOINT_ANGLES)
-        rospy.sleep(1.0)
+        # 阶段5: 模仿拍球动作（手上下拍动）
+        rospy.loginfo("阶段5: 模仿拍球动作")
+        move_to_joint_positions_smooth(right_limb, RIGHT_DRIBBLE_PREP_JOINT_ANGLES)
+        rospy.sleep(0.25)
+        for i in range(4):
+            rospy.loginfo(f"拍球动作循环 {i+1}/4")
+            move_to_joint_positions_smooth(right_limb, RIGHT_DRIBBLE_DOWN_JOINT_ANGLES)
+            rospy.sleep(0.18)
+            move_to_joint_positions_smooth(right_limb, RIGHT_DRIBBLE_UP_JOINT_ANGLES)
+            rospy.sleep(0.18)
+        move_to_joint_positions_smooth(right_limb, RIGHT_DRIBBLE_PREP_JOINT_ANGLES)
+        rospy.sleep(0.4)
 
         # 阶段6: 显示第三张图片
         rospy.loginfo("显示第三张图片")
-        send_image("/root/baxter_ws/src/baxter_examples/scripts/pic/goodbye.jpg")
+        send_image("/root/baxter_ws/src/greet_demo/pic/goodbye.jpg")
 
         # 阶段7: 再次执行三次打招呼动作循环
         rospy.loginfo("阶段7: 再次执行三次打招呼动作循环")
