@@ -68,14 +68,35 @@ def start_server(limb, rate, mode, interpolation):
     else:
         dyn_cfg_srv = Server(PositionFFJointTrajectoryActionServerConfig,
                              lambda config, level: config)
+
+    def _create_jtas_with_retry(target_limb):
+        while not rospy.is_shutdown():
+            try:
+                return JointTrajectoryActionServer(
+                    target_limb,
+                    dyn_cfg_srv,
+                    rate,
+                    mode,
+                    interpolation,
+                )
+            except Exception as exc:
+                rospy.logwarn("JTAS init failed for limb '%s': %s. Retrying...",
+                              target_limb, str(exc))
+                rospy.sleep(1.0)
+        return None
+
     jtas = []
     if limb == 'both':
-        jtas.append(JointTrajectoryActionServer('right', dyn_cfg_srv,
-                                                rate, mode, interpolation))
-        jtas.append(JointTrajectoryActionServer('left', dyn_cfg_srv,
-                                                rate, mode, interpolation))
+        right_jtas = _create_jtas_with_retry('right')
+        left_jtas = _create_jtas_with_retry('left')
+        if right_jtas is not None:
+            jtas.append(right_jtas)
+        if left_jtas is not None:
+            jtas.append(left_jtas)
     else:
-        jtas.append(JointTrajectoryActionServer(limb, dyn_cfg_srv, rate, mode, interpolation))
+        single_jtas = _create_jtas_with_retry(limb)
+        if single_jtas is not None:
+            jtas.append(single_jtas)
 
     def cleanup():
         for j in jtas:

@@ -1,0 +1,74 @@
+<launch>
+  <arg name="left_group" default="left_arm"/>
+  <arg name="right_group" default="right_arm"/>
+  <arg name="both_group" default="both_arms"/>
+  <arg name="use_mock_gesture" default="false"/>
+  <arg name="start_baxter_sim" default="false"/>
+  <arg name="start_move_group" default="true"/>
+  <arg name="start_joint_trajectory_server" default="true"/>
+  <arg name="joint_trajectory_respawn_delay" default="3.0"/>
+  <arg name="semantic_param" default="/robot_description_semantic"/>
+  <arg name="semantic_timeout" default="12.0"/>
+  <arg name="move_group_wait_for_servers" default="20.0"/>
+
+  <!-- 可选：一键启动 Baxter Gazebo + ros_control -->
+  <include file="$(find baxter_gazebo)/launch/baxter_world.launch" if="$(arg start_baxter_sim)">
+    <arg name="gui" value="true"/>
+    <arg name="paused" value="false"/>
+  </include>
+
+  <!-- 先加载 MoveIt 规划上下文（包含 /robot_description_semantic） -->
+  <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="false"/>
+  </include>
+
+  <include file="$(find baxter_moveit_config)/launch/move_group.launch" if="$(arg start_move_group)">
+    <arg name="allow_trajectory_execution" value="true"/>
+    <arg name="fake_execution" value="false"/>
+  </include>
+
+    <node pkg="baxter_interface" type="joint_trajectory_action_server.py"
+      name="rsdk_position_joint_trajectory_action_server_right"
+      args="--limb right --mode position"
+      respawn="true"
+      respawn_delay="$(arg joint_trajectory_respawn_delay)"
+      output="screen"
+      if="$(arg start_joint_trajectory_server)"/>
+
+    <node pkg="baxter_interface" type="joint_trajectory_action_server.py"
+      name="rsdk_position_joint_trajectory_action_server_left"
+      args="--limb left --mode position"
+      respawn="true"
+      respawn_delay="$(arg joint_trajectory_respawn_delay)"
+      output="screen"
+      if="$(arg start_joint_trajectory_server)"/>
+
+  <!-- 如需摄像头可取消注释 -->
+  <!--
+  <node pkg="usb_cam" type="usb_cam_node" name="usb_cam" output="screen">
+    <param name="video_device" value="/dev/video0"/>
+    <param name="image_width" value="640"/>
+    <param name="image_height" value="480"/>
+    <param name="pixel_format" value="yuyv"/>
+    <param name="camera_frame_id" value="usb_cam"/>
+  </node>
+  -->
+
+  <node pkg="my_robot_pkg" type="gesture_node.py" name="gesture_node" output="screen">
+    <param name="use_mock" value="$(arg use_mock_gesture)"/>
+    <param name="min_interval" value="1.0"/>
+  </node>
+
+  <node pkg="my_robot_pkg" type="preset_executor.py" name="preset_executor" output="screen">
+    <param name="left_group" value="$(arg left_group)"/>
+    <param name="right_group" value="$(arg right_group)"/>
+    <param name="both_group" value="$(arg both_group)"/>
+    <param name="semantic_param" value="$(arg semantic_param)"/>
+    <param name="semantic_timeout" value="$(arg semantic_timeout)"/>
+    <param name="move_group_wait_for_servers" value="$(arg move_group_wait_for_servers)"/>
+    <param name="trigger_cooldown" value="1.2"/>
+    <param name="estop_lock_sec" value="2.0"/>
+    <param name="wave_cycles" value="3"/>
+    <rosparam command="load" file="$(find my_robot_pkg)/launch/poses.yaml" param="poses"/>
+  </node>
+</launch>
