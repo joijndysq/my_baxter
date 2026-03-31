@@ -173,7 +173,6 @@ include_directories(
 # )
 catkin_install_python(PROGRAMS
   scripts/end.py
-  gui/zhiliankeji/teach_recorder.py
   scripts/gripper.py
   scripts/dance.py
   scripts/face_follower.py

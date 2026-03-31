@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""让 Baxter 展示安全舞蹈（头部、双臂、夹爪、屏幕）。"""
-
 import os
 import time
 
