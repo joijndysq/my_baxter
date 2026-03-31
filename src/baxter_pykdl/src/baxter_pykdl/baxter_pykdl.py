@@ -71,15 +71,15 @@ class baxter_kinematics(object):
         for j in self._baxter.joints:
             if j.type != 'fixed':
                 nf_joints += 1
-        print "URDF non-fixed joints: %d;" % nf_joints
-        print "URDF total joints: %d" % len(self._baxter.joints)
-        print "URDF links: %d" % len(self._baxter.links)
-        print "KDL joints: %d" % self._kdl_tree.getNrOfJoints()
-        print "KDL segments: %d" % self._kdl_tree.getNrOfSegments()
+        print("URDF non-fixed joints: %d;" % nf_joints)
+        print("URDF total joints: %d" % len(self._baxter.joints))
+        print("URDF links: %d" % len(self._baxter.links))
+        print("KDL joints: %d" % self._kdl_tree.getNrOfJoints())
+        print("KDL segments: %d" % self._kdl_tree.getNrOfSegments())
 
     def print_kdl_chain(self):
-        for idx in xrange(self._arm_chain.getNrOfSegments()):
-            print '* ' + self._arm_chain.getSegment(idx).getName()
+        for idx in range(self._arm_chain.getNrOfSegments()):
+            print('* ' + self._arm_chain.getSegment(idx).getName())
 
     def joints_to_kdl(self, type, values=None):
         kdl_array = PyKDL.JntArray(self._num_jnts)
