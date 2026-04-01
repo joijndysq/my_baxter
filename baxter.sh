@@ -19,11 +19,16 @@ unset your_hostname
 # will be overwritten by any variables set here.
 
 # Specify Baxter's hostname
-baxter_hostname="baxter_hostname.local"
+# baxter_hostname="10.42.0.232"
+# baxter_hostname="192.168.3.15"
+# baxter_hostname="baxter_hostname.local"
+baxter_hostname="011A08P0029.local"
 
 # Set *Either* your computers ip address or hostname. Please note if using
 # your_hostname that this must be resolvable to Baxter.
-your_ip="192.168.3.42"
+# your_ip="192.168.3.95"
+your_ip="10.42.0.1"
+# your_ip="192.168.3.95"
 #your_hostname="my_computer.local"
 
 # Specify ROS distribution (e.g. indigo, hydro, etc.)
@@ -37,19 +42,19 @@ trap "rm -f -- '${tf}'" EXIT
 # ROS_IP and/or ROS_HOSTNAME.
 # If this file does not specify an ip address or hostname - use the
 # previously specified ROS_IP/ROS_HOSTNAME environment variables.
-if [ -n "${your_ip}" ] || [ -n "${your_hostname}" ]; then
+if [ -n "${your_ip:-}" ] || [ -n "${your_hostname:-}" ]; then
 	unset ROS_IP && unset ROS_HOSTNAME
 else
-	your_ip="${ROS_IP}" && your_hostname="${ROS_HOSTNAME}"
+	your_ip="${ROS_IP:-}" && your_hostname="${ROS_HOSTNAME:-}"
 fi
 
 # If argument provided, set baxter_hostname to argument
 # If argument is sim or local, set baxter_hostname to localhost
-if [ -n "${1}" ]; then
+if [ -n "${1:-}" ]; then
 	if [[ "${1}" == "sim" ]] || [[ "${1}" == "local" ]]; then
 		baxter_hostname="localhost"
-		if [[ -z ${your_ip} || "${your_ip}" == "192.168.XXX.XXX" ]] && \
-		[[ -z ${your_hostname} || "${your_hostname}" == "my_computer.local" ]]; then
+		if [[ -z "${your_ip:-}" || "${your_ip:-}" == "192.168.XXX.XXX" ]] && \
+		[[ -z "${your_hostname:-}" || "${your_hostname:-}" == "my_computer.local" ]]; then
 			your_hostname="localhost"
 			your_ip=""
 		fi
@@ -82,7 +87,7 @@ to the root of your catkin workspace.\n"
 	fi
 
 	# if set, verify user has modified the baxter_hostname
-	if [ -n ${baxter_hostname} ] && \
+	if [ -n "${baxter_hostname}" ] && \
 	[[ "${baxter_hostname}" == "baxter_hostname.local" ]]; then
 		echo -ne "EXITING - Please edit this file, modifying the \
 'baxter_hostname' variable to reflect Baxter's current hostname.\n"
@@ -90,29 +95,29 @@ to the root of your catkin workspace.\n"
 	fi
 
 	# if set, verify user has modified their ip address (your_ip)
-	if [ -n ${your_ip} ] && [[ "${your_ip}" == "192.168.XXX.XXX" ]]; then
+	if [ -n "${your_ip:-}" ] && [[ "${your_ip:-}" == "192.168.XXX.XXX" ]]; then
 		echo -ne "EXITING - Please edit this file, modifying the 'your_ip' \
 variable to reflect your current IP address.\n"
 		exit 1
 	fi
 
 	# if set, verify user has modified their computer hostname (your_hostname)
-	if [ -n ${your_hostname} ] && \
-	[[ "${your_hostname}" == "my_computer.local" ]]; then
+	if [ -n "${your_hostname:-}" ] && \
+	[[ "${your_hostname:-}" == "my_computer.local" ]]; then
 		echo -ne "EXITING - Please edit this file, modifying the \
 'your_hostname' variable to reflect your current PC hostname.\n"
 		exit 1
 	fi
 
 	# verify user does not have both their ip *and* hostname set
-	if [ -n "${your_ip}" ] && [ -n "${your_hostname}" ]; then
+	if [ -n "${your_ip:-}" ] && [ -n "${your_hostname:-}" ]; then
 		echo -ne "EXITING - Please edit this file, modifying to specify \
 *EITHER* your_ip or your_hostname.\n"
 		exit 1
 	fi
 
 	# verify that one of your_ip, your_hostname, ROS_IP, or ROS_HOSTNAME is set
-	if [ -z "${your_ip}" ] && [ -z "${your_hostname}" ]; then
+	if [ -z "${your_ip:-}" ] && [ -z "${your_hostname:-}" ]; then
 		echo -ne "EXITING - Please edit this file, modifying to specify \
 your_ip or your_hostname.\n"
 		exit 1	
@@ -143,8 +148,8 @@ has been built (source /opt/ros/\${ros_version}/setup.sh; catkin_make).\n\
 		exit 1
 	fi
 
-	[ -n "${your_ip}" ] && export ROS_IP="${your_ip}"
-	[ -n "${your_hostname}" ] && export ROS_HOSTNAME="${your_hostname}"
+	[ -n "${your_ip:-}" ] && export ROS_IP="${your_ip:-}"
+	[ -n "${your_hostname:-}" ] && export ROS_HOSTNAME="${your_hostname:-}"
 	[ -n "${baxter_hostname}" ] && \
 		export ROS_MASTER_URI="http://${baxter_hostname}:11311"
 

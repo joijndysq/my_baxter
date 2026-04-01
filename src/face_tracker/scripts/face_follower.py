@@ -1,20 +1,4 @@
 #!/usr/bin/env python3
-
-"""
-    face_follower.py - Version 3.0 2014-11-18
-
-    This node make the baxter's face follow yours. It seems to keep looking at you.
-
-    Before running this node. You have to open the camera on the head of baxter.
-    The author recommend using a resolution equal or less than 640x400 to ensure
-    a fast enough image processing. But a higher resolution can make the face
-    recognition more precise.
-
-    Subscibe: /cameras/head_camera/camera_info (remap from /camera_info)
-              /roi
-    Publish : None
-
-"""
 import rospy
 from sensor_msgs.msg import RegionOfInterest, CameraInfo
 from baxter_interface import head
@@ -30,11 +14,16 @@ class FaceFollower():
         self.rate = rospy.get_param("~rate", 10)
         r = rospy.Rate(self.rate)
         
-        # The maximum rotation speed (speed range 0-100)
-        self.max_speed = rospy.get_param("~max_speed", 100)
+        # Baxter head speed uses normalized range [0.0, 1.0].
+        self.max_speed = self._normalize_speed_param(
+            rospy.get_param("~max_speed", 1.0),
+            "max_speed"
+        )
         
-        # The minimum rotation speed (speed range 0-100)
-        self.min_speed = rospy.get_param("~min_speed", 5)
+        self.min_speed = self._normalize_speed_param(
+            rospy.get_param("~min_speed", 0.1),
+            "min_speed"
+        )
         
         # Use PD Algorithm to control the robot
         self.dist_gain = rospy.get_param("~dist_gain", 2.0)
@@ -48,10 +37,10 @@ class FaceFollower():
         # Intialize the head movement command
         self.head_ = head.Head()
         self.pan_distance_ = 0
-        self.pan_speed_ = 10
+        self.pan_speed_ = self.min_speed
         self.pre_pan_speed_ = 0
         rospy.loginfo("Turning the head to the exactly middle...")
-        self.head_.set_pan(0, 10, 10.0)
+        self.head_.set_pan(0, self.pan_speed_, 10.0)
         
         # Get the image width and height from the camera_info topic
         self.image_width = 0
@@ -75,9 +64,13 @@ class FaceFollower():
         # Subscribe to the ROI topic and set the callback to update the robot's motion
         rospy.Subscriber('roi', RegionOfInterest, self.PD_cal)
         
-        # Wait until ROI is detected
-        rospy.wait_for_message('roi', RegionOfInterest)
-        rospy.loginfo("ROI messages detected. Starting follower...")
+        # Do not block forever here: in simulation no face may be detected for a long time.
+        self.roi_wait_timeout = rospy.get_param("~roi_wait_timeout", 3.0)
+        try:
+            rospy.wait_for_message('roi', RegionOfInterest, timeout=self.roi_wait_timeout)
+            rospy.loginfo("ROI messages detected. Starting follower...")
+        except rospy.ROSException:
+            rospy.logwarn("No ROI message within %.1fs. Follower will keep running and wait for target.", self.roi_wait_timeout)
         
         # Begin the following loop
         while not rospy.is_shutdown():
@@ -88,7 +81,7 @@ class FaceFollower():
                 # Reset the flag to False by default
                 self.target_visible = False
                 # Output data for debug
-                rospy.loginfo("Following the targrt! Moving head to location %f in speed %d", self.pan_distance_, self.pan_speed_)
+                rospy.loginfo("Following the targrt! Moving head to location %f in speed %.3f", self.pan_distance_, self.pan_speed_)
 
             self.head_.set_pan(self.pan_distance_, self.pan_speed_, 10.0)
             
@@ -132,7 +125,15 @@ class FaceFollower():
             #rospy.loginfo("percent_offset_x=%f,speed=%f,pre_pan_speed_=%d", percent_offset_x, speed, self.pre_pan_speed_)
         else:
             # Otherwise stop the robot slowly. Here cannot set pan_distance_ to 0!
-            self.pan_speed_ = 10
+            self.pan_speed_ = self.min_speed
+
+    def _normalize_speed_param(self, value, name):
+        speed = float(value)
+        if speed > 1.0:
+            rospy.logwarn("%s=%s looks like legacy 0-100 scale, converting to 0-1.", name, value)
+            speed = speed / 100.0
+        speed = max(0.0, min(1.0, speed))
+        return speed
 
     def get_camera_info(self, msg):
         self.image_width = msg.width

@@ -5,6 +5,7 @@ logs/
 .vscode/
 *.pyc
 __pycache__/
+src/my_robot_pkg/model
 
 # Nested repositories (avoid accidental gitlink staging)
 src/baxter-pnp/

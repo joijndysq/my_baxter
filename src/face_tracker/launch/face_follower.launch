@@ -1,4 +1,5 @@
 <launch>
+  <!-- In simulator, camera topics are usually already published but /cameras/list service is absent. -->
   <arg name="use_camera_control" default="false"/>
 
   <group if="$(arg use_camera_control)">
@@ -44,11 +45,11 @@
     <remap from="camera_info" to="/cameras/head_camera/camera_info" />
     <rosparam>
       rate: 10
-      max_speed: 100
-      min_speed: 10
+      max_speed: 1.0
+      min_speed: 0.1
       dist_gain: 0.045
-      speed_Kp: 300
-      speed_Kd: 50
+      speed_Kp: 3.0
+      speed_Kd: 0.5
       x_threshold: 0.01
     </rosparam>
   </node>

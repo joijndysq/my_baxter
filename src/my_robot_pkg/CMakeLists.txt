@@ -172,9 +172,9 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 catkin_install_python(PROGRAMS
-  scripts/gesture_node.py
-  scripts/preset_executor.py
   scripts/end.py
+  scripts/gripper.py
+  scripts/dance.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
