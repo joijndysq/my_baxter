@@ -64,9 +64,13 @@ class FaceFollower():
         # Subscribe to the ROI topic and set the callback to update the robot's motion
         rospy.Subscriber('roi', RegionOfInterest, self.PD_cal)
         
-        # Wait until ROI is detected
-        rospy.wait_for_message('roi', RegionOfInterest)
-        rospy.loginfo("ROI messages detected. Starting follower...")
+        # Do not block forever here: in simulation no face may be detected for a long time.
+        self.roi_wait_timeout = rospy.get_param("~roi_wait_timeout", 3.0)
+        try:
+            rospy.wait_for_message('roi', RegionOfInterest, timeout=self.roi_wait_timeout)
+            rospy.loginfo("ROI messages detected. Starting follower...")
+        except rospy.ROSException:
+            rospy.logwarn("No ROI message within %.1fs. Follower will keep running and wait for target.", self.roi_wait_timeout)
         
         # Begin the following loop
         while not rospy.is_shutdown():

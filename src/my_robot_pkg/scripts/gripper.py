@@ -11,58 +11,6 @@ from std_msgs.msg import String
 import baxter_interface
 from baxter_interface import CHECK_VERSION
 
-
-RIGHT_HOME = {
-	'right_s0': -0.133,
-	'right_s1': 0.388,
-	'right_e0': 0.338,
-	'right_e1': 0.949,
-	'right_w0': -0.422,
-	'right_w1': -0.026,
-	'right_w2': -0.276,
-}
-
-RIGHT_PRE_GRASP = {
-	'right_s0': -0.24,
-	'right_s1': -0.20,
-	'right_e0': 0.72,
-	'right_e1': 1.30,
-	'right_w0': -0.18,
-	'right_w1': -0.70,
-	'right_w2': -0.06,
-}
-
-RIGHT_GRASP = {
-	'right_s0': -0.30,
-	'right_s1': -0.28,
-	'right_e0': 0.86,
-	'right_e1': 1.58,
-	'right_w0': -0.28,
-	'right_w1': -0.92,
-	'right_w2': -0.10,
-}
-
-RIGHT_LIFT = {
-	'right_s0': -0.10,
-	'right_s1': 0.12,
-	'right_e0': 0.40,
-	'right_e1': -0.70,
-	'right_w0': 0.20,
-	'right_w1': 0.06,
-	'right_w2': -0.16,
-}
-
-RIGHT_FORWARD = {
-	'right_s0': -0.18,
-	'right_s1': 0.10,
-	'right_e0': 0.60,
-	'right_e1': 0.70,
-	'right_w0': -0.08,
-	'right_w1': -0.40,
-	'right_w2': -0.10,
-}
-
-
 class VisionTriggeredGrasp:
 	def __init__(self):
 		self.bridge = CvBridge()
@@ -75,8 +23,7 @@ class VisionTriggeredGrasp:
 		self.min_area = rospy.get_param('~min_area', 2500)
 		self.stable_frames_required = rospy.get_param('~stable_frames_required', 3)
 		self.trigger_cooldown = rospy.get_param('~trigger_cooldown', 4.0)
-		self.motion_speed = rospy.get_param('~motion_speed', 0.25)
-		self.debug_view = rospy.get_param('~debug_view', False)
+		self.debug_view = rospy.get_param('~debug_view', )
 
 		self._stable_count = 0
 		self._last_trigger_time = rospy.Time(0)
@@ -100,9 +47,6 @@ class VisionTriggeredGrasp:
 			rospy.loginfo('enabling robot...')
 			enabler.enable()
 			rospy.sleep(1.0)
-
-		self.right_limb = baxter_interface.Limb('right')
-		self.right_limb.set_joint_position_speed(self.motion_speed)
 
 		self.right_gripper = baxter_interface.Gripper('right', CHECK_VERSION)
 		if self.right_gripper.error():
@@ -219,27 +163,12 @@ class VisionTriggeredGrasp:
 
 		return largest_area >= self.min_area, largest_area, in_center
 
-	def _move(self, target, timeout=12.0):
-		self.right_limb.move_to_joint_positions(target, timeout=timeout, threshold=0.01)
-
 	def _grasp_sequence(self, close_only=False):
 		try:
 			if close_only:
-				self.right_gripper.close()
-				rospy.sleep(0.5)
+				rospy.loginfo('close-only trigger, closing right gripper')
 			else:
-				self.right_gripper.open()
-				rospy.sleep(0.4)
-
-				self._move(RIGHT_FORWARD)
-				rospy.sleep(0.2)
-
-				self._move(RIGHT_PRE_GRASP)
-				rospy.sleep(0.2)
-
-				self._move(RIGHT_GRASP)
-				rospy.sleep(0.2)
-
+				rospy.loginfo('vision trigger, closing right gripper')
 			self.right_gripper.close()
 			rospy.sleep(0.7)
 

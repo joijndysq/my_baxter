@@ -146,7 +146,7 @@ def initialize_right_arm():
         raise
 
 def move_to_joint_positions_smooth(limb, target_angles, timeout=15.0, 
-                                   max_step=0.1, interpolation_steps=10):
+                                   max_step=0.1, interpolation_steps=30):
     """
     平滑移动到目标关节位置，最小化关节角变化
     参数:
@@ -194,7 +194,7 @@ def move_to_joint_positions_smooth(limb, target_angles, timeout=15.0,
         limb.move_to_joint_positions(
             positions=target_angles,
             timeout=timeout,
-            threshold=0.00872665  # 约0.5度容差
+            threshold=0.00872665  
         )
         
         rospy.sleep(0.1)
@@ -261,7 +261,7 @@ def perform_right_arm_sequence():
         rospy.loginfo("显示第二张图片")
         send_image("/root/baxter_ws/src/greet_demo/pic/basketball.jpg")
         
-        # 阶段5: 模仿拍球动作（手上下拍动）
+        # 阶段5: 模仿拍球动作
         rospy.loginfo("阶段5: 模仿拍球动作")
         move_to_joint_positions_smooth(right_limb, RIGHT_DRIBBLE_PREP_JOINT_ANGLES)
         rospy.sleep(0.25)
@@ -280,7 +280,7 @@ def perform_right_arm_sequence():
 
         # 阶段7: 再次执行三次打招呼动作循环
         rospy.loginfo("阶段7: 再次执行三次打招呼动作循环")
-        for i in range(3):  # 修正：应该是3次而不是2次
+        for i in range(3): 
             rospy.loginfo(f"第二次打招呼动作循环 {i+1}/3")
             
             # 从打招呼位置回到初始位置
@@ -331,8 +331,6 @@ class BaxterDualArmController:
     def cleanup(self):
         """关闭时停止所有动作"""
         rospy.loginfo("正在关闭Baxter双臂控制系统...")
-        
-        # 确保双臂回到安全位置
         try:
             if hasattr(self, 'left_limb'):
                 rospy.loginfo("将左臂移动到安全位置...")

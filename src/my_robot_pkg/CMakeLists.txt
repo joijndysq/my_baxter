@@ -175,7 +175,6 @@ catkin_install_python(PROGRAMS
   scripts/end.py
   scripts/gripper.py
   scripts/dance.py
-  scripts/face_follower.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

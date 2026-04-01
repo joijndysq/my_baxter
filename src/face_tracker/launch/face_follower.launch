@@ -1,4 +1,5 @@
 <launch>
+  <!-- In simulator, camera topics are usually already published but /cameras/list service is absent. -->
   <arg name="use_camera_control" default="false"/>
 
   <group if="$(arg use_camera_control)">
