@@ -23,7 +23,7 @@ class VisionTriggeredGrasp:
 		self.min_area = rospy.get_param('~min_area', 2500)
 		self.stable_frames_required = rospy.get_param('~stable_frames_required', 3)
 		self.trigger_cooldown = rospy.get_param('~trigger_cooldown', 4.0)
-		self.debug_view = rospy.get_param('~debug_view', )
+		self.debug_view = rospy.get_param('~debug_view', False)
 
 		self._stable_count = 0
 		self._last_trigger_time = rospy.Time(0)

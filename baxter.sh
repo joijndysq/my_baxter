@@ -19,10 +19,10 @@ unset your_hostname
 # will be overwritten by any variables set here.
 
 # Specify Baxter's hostname
-# baxter_hostname="10.42.0.232"
+baxter_hostname="10.42.0.232"
 # baxter_hostname="192.168.3.15"
 # baxter_hostname="baxter_hostname.local"
-baxter_hostname="011A08P0029.local"
+# baxter_hostname="011A08P0029.local"
 
 # Set *Either* your computers ip address or hostname. Please note if using
 # your_hostname that this must be resolvable to Baxter.
